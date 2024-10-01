@@ -6,7 +6,7 @@ This is a AI Music Recommender that provides a music playlist based on the conve
 
 Make sure you have the following installed on your machine:
 
-- [Node.js]m)
+- [Node.js]
 
 ### Download Node.js
 
