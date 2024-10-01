@@ -22,6 +22,9 @@ Make sure you have the following installed on your machine:
 
 1. **Clone the repository** (or download the project files) and navigate to the project directory:
 
+2. **Install Dependencies**
+    inside project directory run the following command:
+        npm install
 
 2. **Run the server**:
 

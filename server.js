@@ -2,6 +2,9 @@
 
 
 
+let playlist = []
+
+
 //Required packages 
 const fs = require('fs');
 const express = require('express'); // Creates server and handles routing
@@ -28,6 +31,39 @@ const initializePlaylist = () => {
 };
 
 initializePlaylist(); //Calls initialize function to clear playlist.json
+
+
+const { getTrackInfo, formatTrackInformation } = require('./MusicFunctions'); //Imports functions from MusicFunctions
+
+
+
+//Performs tester input for getTrack
+getTrackInfo('Adele', 'hello')
+  .then(trackInfo => {
+    console.log('Track Info:', formatTrackInformation(trackInfo));
+    playlist.push(formatTrackInformation(trackInfo))
+    savePlaylist(playlist)
+  })
+  .catch(error => {
+    console.error(error);
+  });
+  getTrackInfo('Pharrell Williams', 'Happy')
+  .then(trackInfo => {
+    console.log('Track Info:', formatTrackInformation(trackInfo));
+    playlist.push(formatTrackInformation(trackInfo))
+  })
+  .catch(error => {
+    console.error(error);
+  });
+ 
+
+
+
+
+
+
+
+
 
 //Initializes the Express app on port 3000
 const port = process.env.PORT || 3000;
