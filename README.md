@@ -6,7 +6,7 @@ This is a AI Music Recommender that provides a music playlist based on the conve
 
 Make sure you have the following installed on your machine:
 
-- [Node.js]m)
+- [Node.js]
 
 ### Download Node.js
 
@@ -22,12 +22,11 @@ Make sure you have the following installed on your machine:
 
 1. **Clone the repository** (or download the project files) and navigate to the project directory:
 
-2. **Install the required dependencies**:
-    - npm install -g nodemon 
-3. **Run the server**:
+
+2. **Run the server**:
 
     Start the server using the following command:
-        nodemon server.js
+        node server.js
 
- 4. **Access the server**:
+ 3. **Access the server**:
     - click on link provided in terminal 
