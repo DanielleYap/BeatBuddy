@@ -1,0 +1,19 @@
+{
+  "name": "beatbuddy",
+  "version": "1.0.0",
+  "description": "AI Music Reccomender using OpenAI's Chat-gpt-4o and Last.fm api",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0"
+  }
+}
