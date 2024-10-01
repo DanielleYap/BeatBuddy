@@ -61,5 +61,5 @@ async function getTrackInfo(artist, songTitle){
 
   module.exports = {
     getTrackInfo,
-    formatTrackInformation  // Export formatTrackInformation if needed elsewhere
+    formatTrackInformation 
 };
