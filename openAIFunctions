@@ -1,0 +1,65 @@
+const OpenAI = require('openai'); // To interact with OpenAI
+
+
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY, //TODO: fix enviorement key issue
+  });
+
+
+
+
+  // POST endpoint to handle conversation input
+app.post('/generate', async (req, res) => {
+    // input: The newest message from the user
+    // conversationHistory: Previous messages between user and AI
+    const { input, conversationHistory } = req.body;
+  
+    // Initialize the session's totalListOfSongs if it doesn't exist
+    if (!req.session.totalListOfSongs) {
+      req.session.totalListOfSongs = {};
+    }
+  
+    try {
+        const messages = [
+          // Initial instruction to OpenAI
+          {
+            role: 'system',
+            content:
+              'You are Beat Buddy, a music recommender. Guide the user and make playlists based on their inputs and suggestions. Whenever you call a function and receive a response, include the information from the function response in your reply to the user. You have access to the functions searchTracks, getTopSongs, and getTotalTracks, which you can use to help the user.',
+          },
+          ...conversationHistory,
+          { role: 'user', content: input },
+        ];
+
+        // Create the OpenAI completion with function calling
+    const completion = await openai.chat.completions.create({
+        //The model in use 
+        model: 'gpt-4o-mini',
+        messages: messages,
+          // Model decides when function should be made
+         function_call: 'auto',
+        max_tokens: 250,
+         temperature: 0.7,
+    });
+
+     // The response from OpenAI
+     const responseMessage = completion.choices[0].message;
+     // Stores final response to user
+     let assistantResponse;
+     // Updates conversation history
+     let updatedConversationHistory = [
+       ...conversationHistory,
+       { role: 'user', content: input },
+     ];
+
+    res.json({
+        output: assistantResponse,
+        conversationHistory: updatedConversationHistory,
+      });
+    } catch (error) {
+      console.error('Error:', error.response ? error.response.data : error.message);
+      res.status(500).json({ error: 'Unable to complete the request.' });
+    }
+    });
+
