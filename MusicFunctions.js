@@ -1,10 +1,10 @@
 //music functions 
 
-//require('dotenv').config(); //Loads enviorment variables from .env file
+require('dotenv').config(); //Loads enviorment variables from .env file
 
 const axios = require('axios')
 
-const API_KEY ='b86f8a28bbffac1bdeee2e712a177de6'
+const API_KEY = process.env.LASTFM_API_KEY;
 
 
 
