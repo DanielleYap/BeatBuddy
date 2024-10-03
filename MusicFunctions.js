@@ -24,8 +24,8 @@ async function getAlbumInfo(artist, albumTitle){
     });
 
     const albumInfo = response.data;
-    return formatAlbumInformation(albumInfo);
-  } catch(error){
+    return formatInformation(albumInfo, 'album');
+    } catch(error){
     console.error("Error fetching data from last.fm", error);
     throw error;
   }
@@ -51,8 +51,8 @@ async function searchAlbum(albumTitle, limit = 5){
 
     // Loop through each searched albums and format it
     for (const album of searchResults) {
-      const formattedAlbum = formatAlbumInformation(album);
-      formattedAlbums.push(formattedAlbum);
+      const formattedAlbum = formatInformation(album, 'album');
+            formattedAlbums.push(formattedAlbum);
     }
 
     return formattedAlbums; // Returns the formatted list of searched albums
@@ -82,8 +82,8 @@ async function getTrackInfo(artist, songTitle){
     });
 
     const trackInfo = response.data;
-    return formatTrackInformation(trackInfo);
-  } catch(error){
+    return formatInformation(trackInfo, 'track');
+    } catch(error){
     console.error("Error fetching data from last.fm", error);
     throw error;
   }
@@ -115,8 +115,8 @@ async function getRelatedTracks(artist, songTitle, limit = 5) {
 
     // Loop through each related track and format it
     for (const track of relatedTracks) {
-      const formattedTrack = formatTrackInformation(track);
-      formattedTracks.push(formattedTrack);
+      const formattedTrack = formatInformation(track, 'track');
+            formattedTracks.push(formattedTrack);
     }
 
     return formattedTracks; // Returns the formatted list of similar tracks
@@ -151,7 +151,7 @@ async function searchTrack(songTitle, limit = 5){
 
     // Loop through each searched track and format it
     for (const track of searchResults) {
-      const formattedTrack = formatTrackInformation(track);
+      const formattedTrack = formatInformation(track, 'track');      
       formattedTracks.push(formattedTrack);
     }
 
@@ -163,125 +163,172 @@ async function searchTrack(songTitle, limit = 5){
   }
 }
 
+//------------------------------------Tag related methods----------------------------------------------
+
+//param tag: The genre/tag to search top tacks of
+//param limit: The number of tracks to search for, default 5
+//getTagTopTracks: Returns top tracks relating to particular tag
+async function getTagsTopTracks(tag, limit = 5) {
+  try {
+    const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
+      params: {
+        method: 'tag.getTopTracks',
+        api_key: API_KEY,
+        tag: tag,
+        limit: limit,
+        format: 'json',
+      },
+    });
+
+    // Correctly access the array of top tracks
+    const tagResults = response.data.tracks?.track || [];
+
+    let formattedTracks = [];
+
+    // Loop through each top track and format it
+    for (const track of tagResults) {
+      const formattedTrack = formatInformation(track, 'track');      
+      formattedTracks.push(formattedTrack);
+    }
+
+    return formattedTracks; // Returns the formatted list of top tracks
+
+  } catch (error) {
+    console.error("Error fetching data from Last.fm", error);
+    throw error;
+  }
+}
 
 
+//param tag: The genre/tag to search top artists of
+//param limit: The number of artists to search for, default 5
+//getTagsTopArtist: Returns top artists relating to particular tag
+async function getTagsTopArtists(tag, limit = 5) {
+  try {
+    const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
+      params: {
+        method: 'tag.getTopArtists',
+        api_key: API_KEY,
+        tag: tag,
+        limit: limit,
+        format: 'json',
+      },
+    });
 
+    const tagResults = response.data.topartists?.artist || [];
 
+    let formattedArtists = [];
 
+    for (const artist of tagResults) {
+      const formattedArtist = formatInformation(artist, 'artist');
+      formattedArtists.push(formattedArtist);
+    }
 
-
-
-
-
-
-
-
-
+    return formattedArtists;
+  } catch (error) {
+    console.error("Error fetching data from Last.fm", error);
+    throw error;
+  }
+}
 
 
 //------------------------------------Format related methods----------------------------------------------
-//param trackInfo: JSON formatted information about a particular song
-//formatTrackInformation: Extracts the necessary data from the trackInfo parameter
-const formatTrackInformation = (trackInfo) => {
-  let title = 'Unknown';
-  let artist = 'Unknown';
-  let releaseDate = 'Unknown';
-  let topTags = [];
-  let albumName = 'Unknown';
+//param data: JSON formatted information about a particular dataset
+//param dataType: The type of data, "album", "artist" ...
+//formatInformation: Extracts the necessary data from the data parameter
+const formatInformation = (data, dataType) => {
+  let formattedData = {
+    type: dataType,
+    title: 'Unknown',
+    artist: 'Unknown',
+    releaseDate: 'Unknown',
+    topTags: [],
+    album: 'Unknown',
+    listeners: 'Unknown',
+    playcount: 'Unknown',
+    url: 'Unknown',
+    images: [],
+  };
 
-  if (trackInfo) {
-    // Title
-    if (trackInfo.name) {
-      title = trackInfo.name;
-    } else if (trackInfo.track && trackInfo.track.name) {
-      title = trackInfo.track.name;
-    }
+  if (data) {
+    if (dataType === 'track') {
+      // Title
+      formattedData.title = data.name || data.track?.name || formattedData.title;
 
-    // Artist
-    if (typeof trackInfo.artist === 'string') {
-      artist = trackInfo.artist;
-    } else if (trackInfo.artist && trackInfo.artist.name) {
-      artist = trackInfo.artist.name;
-    } else if (trackInfo.track && trackInfo.track.artist && trackInfo.track.artist.name) {
-      artist = trackInfo.track.artist.name;
-    }
+      // Artist
+      if (typeof data.artist === 'string') {
+        formattedData.artist = data.artist;
+      } else if (data.artist && data.artist.name) {
+        formattedData.artist = data.artist.name;
+      } else if (data.track && data.track.artist && data.track.artist.name) {
+        formattedData.artist = data.track.artist.name;
+      }
 
-    // Release Date
-    if (trackInfo.wiki && trackInfo.wiki.published) {
-      releaseDate = trackInfo.wiki.published;
-    } else if (trackInfo.track && trackInfo.track.wiki && trackInfo.track.wiki.published) {
-      releaseDate = trackInfo.track.wiki.published;
-    }
+      // Release Date
+      formattedData.releaseDate = data.wiki?.published || data.track?.wiki?.published || formattedData.releaseDate;
 
-    // Top Tags
-    if (trackInfo.toptags && trackInfo.toptags.tag) {
-      topTags = trackInfo.toptags.tag.map(tag => tag.name);
-    } else if (trackInfo.track && trackInfo.track.toptags && trackInfo.track.toptags.tag) {
-      topTags = trackInfo.track.toptags.tag.map(tag => tag.name);
-    }
+      // Top Tags
+      if (data.toptags && data.toptags.tag) {
+        formattedData.topTags = data.toptags.tag.map(tag => tag.name);
+      } else if (data.track && data.track.toptags && data.track.toptags.tag) {
+        formattedData.topTags = data.track.toptags.tag.map(tag => tag.name);
+      }
 
-    // Album
-    if (trackInfo.album && trackInfo.album.title) {
-      albumName = trackInfo.album.title;
-    } else if (trackInfo.track && trackInfo.track.album && trackInfo.track.album.title) {
-      albumName = trackInfo.track.album.title;
+      // Album
+      formattedData.album = data.album?.title || data.track?.album?.title || formattedData.album;
+
+    } else if (dataType === 'album') {
+      // Title
+      formattedData.title = data.name || formattedData.title;
+
+      // Artist
+      formattedData.artist = data.artist || formattedData.artist;
+
+      // Release Date
+      formattedData.releaseDate = data.wiki?.published || formattedData.releaseDate;
+
+      // Top Tags
+      if (data.tags && data.tags.tag) {
+        formattedData.topTags = data.tags.tag.map(tag => tag.name);
+      }
+
+      // Albums don't have the 'album' field, so we can set it to 'N/A' or leave as 'Unknown'
+
+    } else if (dataType === 'artist') {
+      // Name
+      formattedData.title = data.name || formattedData.title; // Using 'title' to keep consistency
+
+      // Listeners
+      formattedData.listeners = data.listeners || formattedData.listeners;
+
+      // Playcount
+      formattedData.playcount = data.playcount || formattedData.playcount;
+
+      // URL
+      formattedData.url = data.url || formattedData.url;
+
+      // Images
+      if (data.image) {
+        formattedData.images = data.image.map(img => ({
+          size: img.size,
+          url: img['#text'],
+        }));
+      }
+
+      // Artists don't have 'artist', 'album', 'releaseDate', or 'topTags' in this context
     }
   }
 
-  return {
-    title: title,
-    artist: artist,
-    releaseDate: releaseDate,
-    topTags: topTags,
-    album: albumName,
-  };
+  return formattedData;
 };
-//param albumInfo: JSON formatted information about a particular albun
-//formatAlbumInformation: Extracts the necessary data from the albumInfo parameter
-const formatAlbumInformation = (albumInfo) => {
-  let title = 'Unknown';
-  let artist = 'Unknown';
-  let releaseDate = 'Unknown';
-  let topTags = [];
 
-  if (albumInfo) {
-    let album = albumInfo.album ? albumInfo.album : albumInfo;
-
-    // Title
-    if (album.name) {
-      title = album.name;
-    }
-
-    // Artist
-    if (album.artist) {
-      artist = album.artist;
-    }
-
-    // Release Date
-    if (album.wiki && album.wiki.published) {
-      releaseDate = album.wiki.published;
-    }
-
-    // Top Tags
-    if (album.tags && album.tags.tag) {
-      topTags = album.tags.tag.map(tag => tag.name);
-    }
-  }
-
-  return {
-    title: title,
-    artist: artist,
-    releaseDate: releaseDate,
-    topTags: topTags,
-  };
-};
 
 module.exports = {
   getTrackInfo,
-  formatTrackInformation,
   getRelatedTracks,
   searchTrack,
   getAlbumInfo,
   searchAlbum,
-  formatAlbumInformation,
+  getTagsTopTracks,
+  getTagsTopArtists 
 };
