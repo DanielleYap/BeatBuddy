@@ -4,6 +4,65 @@ const API_KEY = '' //Enter your API Key here
 
 const axios = require('axios')
 
+
+//------------------------------------Album related methods----------------------------------------------
+
+//param artist: The artist of the album being searched
+//param albumTitle: The title of the album to search
+//getAlbumInfo: Returns information relating to an album from last.fm
+async function getAlbumInfo(artist, albumTitle){
+  try{
+    const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
+      params: {
+        method: 'album.getInfo',
+        api_key: API_KEY,
+        artist: artist,
+        album: albumTitle,
+        autocorrect: 1,
+        format: 'json'
+      }
+    });
+
+    const albumInfo = response.data;
+    return formatAlbumInformation(albumInfo);
+  } catch(error){
+    console.error("Error fetching data from last.fm", error);
+    throw error;
+  }
+}
+//param albumTitle: The title of an album to search for
+//param limit: The number of albums to search for, default 5
+//serachAlbum: Returns a list of albums with the title of albumTitle
+async function searchAlbum(albumTitle, limit = 5){
+  try{
+    const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
+      params: {
+        method: 'album.search',
+        api_key: API_KEY,
+        album: albumTitle,
+        limit: limit,
+        format: 'json',
+      },
+    });
+
+    // Access the array of searched albums safely
+    const searchResults = response.data.results?.albummatches?.album || [];
+    let formattedAlbums = [];
+
+    // Loop through each searched albums and format it
+    for (const album of searchResults) {
+      const formattedAlbum = formatAlbumInformation(album);
+      formattedAlbums.push(formattedAlbum);
+    }
+
+    return formattedAlbums; // Returns the formatted list of searched albums
+
+  } catch (error) {
+    console.error("Error fetching data from Last.fm", error);
+    throw error; // Rethrow the error so it can be caught in server.js
+  }
+}
+
 //------------------------------------Track related methods----------------------------------------------
 
 //param artist: The name of the artist to use for searching
@@ -177,9 +236,52 @@ const formatTrackInformation = (trackInfo) => {
     album: albumName,
   };
 };
+//param albumInfo: JSON formatted information about a particular albun
+//formatAlbumInformation: Extracts the necessary data from the albumInfo parameter
+const formatAlbumInformation = (albumInfo) => {
+  let title = 'Unknown';
+  let artist = 'Unknown';
+  let releaseDate = 'Unknown';
+  let topTags = [];
+
+  if (albumInfo) {
+    let album = albumInfo.album ? albumInfo.album : albumInfo;
+
+    // Title
+    if (album.name) {
+      title = album.name;
+    }
+
+    // Artist
+    if (album.artist) {
+      artist = album.artist;
+    }
+
+    // Release Date
+    if (album.wiki && album.wiki.published) {
+      releaseDate = album.wiki.published;
+    }
+
+    // Top Tags
+    if (album.tags && album.tags.tag) {
+      topTags = album.tags.tag.map(tag => tag.name);
+    }
+  }
+
+  return {
+    title: title,
+    artist: artist,
+    releaseDate: releaseDate,
+    topTags: topTags,
+  };
+};
+
 module.exports = {
   getTrackInfo,
   formatTrackInformation,
   getRelatedTracks,
   searchTrack,
+  getAlbumInfo,
+  searchAlbum,
+  formatAlbumInformation,
 };

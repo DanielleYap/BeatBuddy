@@ -28,7 +28,7 @@ const initializePlaylist = () => {
 
 initializePlaylist(); // Calls initialize function to clear playlist.json
 
-const { getTrackInfo, formatTrackInformation, getRelatedTracks, searchTrack } = require('./MusicFunctions');
+const { getTrackInfo, getRelatedTracks, searchTrack, searchAlbum, getAlbumInfo} = require('./MusicFunctions');
 
 
 //---------------------------------Testing Functions-----------------------------------------------------
@@ -77,6 +77,31 @@ searchTrack('Hello')
   .catch(error => {
     console.error(error);
   });
+
+  //ToDo: Make albums json file 
+getAlbumInfo('Metallica', 'Master of Puppets')
+  .then(albumInfo => {
+    console.log('Album Info:', albumInfo);
+    playlist.push(albumInfo);
+    savePlaylist(playlist);
+  })
+  .catch(error => {
+    console.error(error);
+  });
+searchAlbum('Ride The Lightning')
+  .then(searchedAlbums => {
+    if (Array.isArray(searchedAlbums)) {
+      console.log("Searched albums\n", searchedAlbums);
+      playlist.push(...searchedAlbums); // Use spread operator to add multiple tracks
+      savePlaylist(playlist);
+    } else {
+      console.error('No tracks returned');
+    }
+  })
+  .catch(error => {
+    console.error(error);
+  });
+
 
 
 
