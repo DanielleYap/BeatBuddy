@@ -2,7 +2,9 @@ require('dotenv').config();  // Load environment variables
 
 const API_KEY = '' //Enter your API Key here
 
-const axios = require('axios')
+const axios = require('axios');
+const fs = require('fs');
+
 
 
 //------------------------------------Album related methods----------------------------------------------
@@ -11,6 +13,8 @@ const axios = require('axios')
 //param albumTitle: The title of the album to search
 //getAlbumInfo: Returns information relating to an album from last.fm
 async function getAlbumInfo(artist, albumTitle){
+  console.log('getAlbumInfo called');
+
   try{
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -34,6 +38,8 @@ async function getAlbumInfo(artist, albumTitle){
 //param limit: The number of albums to search for, default 5
 //serachAlbum: Returns a list of albums with the title of albumTitle
 async function searchAlbum(albumTitle, limit = 5){
+  console.log('searchAlbum called');
+
   try{
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -69,6 +75,8 @@ async function searchAlbum(albumTitle, limit = 5){
 //param song: The name of the song to be searched
 //getTrackInfo: Returns track information in JSON formatting 
 async function getTrackInfo(artist, songTitle){
+  console.log('getTrackInfo called');
+
   try{
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -95,6 +103,8 @@ async function getTrackInfo(artist, songTitle){
 //param limit: The limit of similar tracks to return
 //getSimilarTracks: Returns related tracks in JSON formatting
 async function getRelatedTracks(artist, songTitle, limit = 5) {
+  console.log('getRelatedTracks called');
+
   try {
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -119,6 +129,11 @@ async function getRelatedTracks(artist, songTitle, limit = 5) {
             formattedTracks.push(formattedTrack);
     }
 
+    //add to tracks.json
+    addToTracks(formattedTracks);
+    console.log('tracks.json updated')
+
+
     return formattedTracks; // Returns the formatted list of similar tracks
 
   } catch (error) {
@@ -133,6 +148,8 @@ async function getRelatedTracks(artist, songTitle, limit = 5) {
 //param limit: The limit of  tracks to return
 //searchTrack: Returns a formatted list of tracks with the name of songTitle
 async function searchTrack(songTitle, limit = 5){
+  console.log('searchTrack called');
+
   try{
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -155,6 +172,10 @@ async function searchTrack(songTitle, limit = 5){
       formattedTracks.push(formattedTrack);
     }
 
+    //add to tracks.json
+    addToTracks(formattedTracks);
+    console.log('tracks.json updated')
+
     return formattedTracks; // Returns the formatted list of searched tracks
 
   } catch (error) {
@@ -169,6 +190,8 @@ async function searchTrack(songTitle, limit = 5){
 //param limit: The number of tracks to search for, default 5
 //getTagTopTracks: Returns top tracks relating to particular tag
 async function getTagsTopTracks(tag, limit = 5) {
+  console.log('getTagsTopTracks called');
+
   try {
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -191,6 +214,11 @@ async function getTagsTopTracks(tag, limit = 5) {
       formattedTracks.push(formattedTrack);
     }
 
+    //append to tracks.json
+    addToTracks(formattedTracks);
+    console.log('tracks.json updated')
+
+
     return formattedTracks; // Returns the formatted list of top tracks
 
   } catch (error) {
@@ -204,6 +232,7 @@ async function getTagsTopTracks(tag, limit = 5) {
 //param limit: The number of artists to search for, default 5
 //getTagsTopArtist: Returns top artists relating to particular tag
 async function getTagsTopArtists(tag, limit = 5) {
+  console.log('getTagsTopArtists called');
   try {
     const response = await axios.get('http://ws.audioscrobbler.com/2.0/', {
       params: {
@@ -320,6 +349,47 @@ const formatInformation = (data, dataType) => {
   }
 
   return formattedData;
+};
+
+
+async function addToTracks(formattedTracks){
+  //Grab current tracks.json contents
+  let trackData = loadData('tracks.json');
+
+  //append formattedTracks to tracks.json, unique songs only
+  for(let track of formattedTracks){
+    const exists = trackData.some(
+      // True if track in formatted track already exists in the fileData
+      (t) => t.title === track.title && t.artist === track.artist
+    );
+
+    //Pushes track if it does not already exist 
+    if(!exists){
+      trackData.push(track); 
+    }
+  }
+
+
+  //save complete data back to tracks.json
+  saveData(trackData, 'tracks.json')
+}
+
+
+
+const saveData = (data, filename) => {
+  //Write the data to the file 
+  fs.writeFileSync(filename, JSON.stringify(data, null, 2));
+};
+
+const loadData = (filename) => {
+  //Ensure the file exists
+  if (fs.existsSync(filename)) {
+    //Read the data in utf8 formatting
+    const data = fs.readFileSync(filename, 'utf8');
+    return JSON.parse(data);
+  } else {
+    return [];
+  }
 };
 
 
