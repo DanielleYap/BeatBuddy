@@ -374,13 +374,77 @@ async function addToTracks(formattedTracks){
   saveData(trackData, 'tracks.json')
 }
 
+//param songTitle: The name of the song to add to the playlist
+//param artist: The artist of the song, default none
+//addToPlaylist: Adds a particular song to the users playlist
+async function addToPlaylist(songTitle, artist = null){
+  console.log("addToPlaylist called");
+  //laod the current tracklist
+  let trackData = loadData('tracks.json');
+  //loads current playlist
+  let playlistData = loadData('playlist.json');
+  //if already in tracklist add that song to playlist
+  // Check if the song is already in the playlist
+  let songInPlaylist = playlistData.some(
+    (t) => t.title.toLowerCase() === songTitle.toLowerCase() && (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
+  );
+  if (songInPlaylist) {
+    console.log("Song is already in the playlist.");
+    return;
+  }
 
 
+  //if not in playlist, call searchTrack, and append to playlist.json
+   // Find the song in tracks.json
+   let songInTracks = trackData.find(
+    (t) => t.title.toLowerCase() === songTitle.toLowerCase() && (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
+  );
+
+  if (songInTracks) {
+    // Add the song to the playlist
+    playlistData.push(songInTracks);
+    //updates the playlist with new song
+    saveData(playlistData, 'playlist.json'); 
+    console.log("Song added to playlist from tracks.json.");
+  } else {
+    // Song not in tracks.json, search for it
+    let searchResults = await searchTrack(songTitle);
+    
+    let song;
+    //Used to add artist parameter if passed through to function
+    if (artist) {
+      // Find the song with the specified artist
+      song = searchResults.find((t) => t.artist.toLowerCase() === artist.toLowerCase());
+    }
+
+    if (!song && searchResults.length > 0) {
+      // If artist not specified or not found, take the first result
+      song = searchResults[0];
+    }
+
+    if (song) {
+      // Add song to tracks.json
+      trackData.push(song);
+      saveData(trackData, 'tracks.json');
+      
+      // Add song to playlist.json
+      playlistData.push(song);
+      saveData(playlistData, 'playlist.json');
+      console.log("Song found via searchTrack and added to tracks.json and playlist.json.");
+    } else {
+      console.log("Song not found via searchTrack.");
+    }
+  }
+}
+
+//saves the data  to a particular json file
 const saveData = (data, filename) => {
   //Write the data to the file 
   fs.writeFileSync(filename, JSON.stringify(data, null, 2));
 };
 
+
+//Load up the data from the provided fileename
 const loadData = (filename) => {
   //Ensure the file exists
   if (fs.existsSync(filename)) {
@@ -400,5 +464,6 @@ module.exports = {
   getAlbumInfo,
   searchAlbum,
   getTagsTopTracks,
-  getTagsTopArtists 
+  getTagsTopArtists,
+  addToPlaylist, 
 };
