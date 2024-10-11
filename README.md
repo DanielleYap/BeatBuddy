@@ -44,16 +44,18 @@ npm -v
 
 1.  **Clone the repository**
 In Terminal run the following command: 
-`git clone https://github.com/WickeyR/BeatBuddy_CS4800.git
-`
+    ```
+    git clone https://github.com/WickeyR/BeatBuddy_CS4800.git
 
 2. **Navigate to project directory**
-	`cd BEATBUDDY`
+	```
+	cd BEATBUDDY
 
 3.  **Install Dependencies**
 
 	Inside project directory run the following command:
-    `npm install`
+    ```
+    npm install
 
 4. **Setup API Keys**: 
 - In **openAIFunctions.js**: 
@@ -63,7 +65,8 @@ In Terminal run the following command:
     
 5.  **Run the server**:
 	Start the server using the following command:
-	`node server.js`
+	```
+	node server.js
 	
 6.  **Access the server**:
  Click on link provided in terminal:
