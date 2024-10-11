@@ -1,6 +1,6 @@
 require('dotenv').config();  // Load environment variables
 
-const API_KEY = '' //Enter your API Key here
+const API_KEY = ''  //Enter your API Key here
 
 const axios = require('axios');
 const fs = require('fs');
@@ -372,6 +372,7 @@ async function addToTracks(formattedTracks){
 
   //save complete data back to tracks.json
   saveData(trackData, 'tracks.json')
+  return "track successfuly added to playlist";
 }
 
 //param songTitle: The name of the song to add to the playlist
@@ -390,7 +391,7 @@ async function addToPlaylist(songTitle, artist = null){
   );
   if (songInPlaylist) {
     console.log("Song is already in the playlist.");
-    return;
+    return { status: "Song is already in the playlist." };
   }
 
 
@@ -406,6 +407,7 @@ async function addToPlaylist(songTitle, artist = null){
     //updates the playlist with new song
     saveData(playlistData, 'playlist.json'); 
     console.log("Song added to playlist from tracks.json.");
+    return { status: "Song added to playlist from tracks.json." };
   } else {
     // Song not in tracks.json, search for it
     let searchResults = await searchTrack(songTitle);
@@ -431,8 +433,10 @@ async function addToPlaylist(songTitle, artist = null){
       playlistData.push(song);
       saveData(playlistData, 'playlist.json');
       console.log("Song found via searchTrack and added to tracks.json and playlist.json.");
+      return { status: "Song found and added to playlist." };
     } else {
       console.log("Song not found via searchTrack.");
+      return { status: "Song not found.", error: true };
     }
   }
 }
@@ -457,6 +461,48 @@ const loadData = (filename) => {
 };
 
 
+
+async function deleteFromPlaylist(songTitle, artist = null){
+  console.log("deleteFromPlaylist called ");
+
+  //Load current playlist 
+  let playlistData = loadData('playlist.json');
+
+  //if already in tracklist add that song to playlist
+  // Check if the song is already in the playlist
+  let songInPlaylist = playlistData.some(
+    (t) => t.title.toLowerCase() === songTitle.toLowerCase() && 
+    (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
+  );
+
+  //Return none 
+  if (!songInPlaylist) {
+    console.log("Song is not in playlist.");
+    return { status: "Song is not in playlist.", error: true }; 
+   }
+  //If there is remove it 
+  playlistData = playlistData.filter(
+    (t) =>
+      !(
+        t.title.toLowerCase() == songTitle.toLowerCase() &&
+        (artist ? t.artist.toLowerCase() === artist.toLowerCase(): true)
+      )
+  );
+  //update the playlist 
+  saveData(playlistData, 'playlist.json');
+  console.log("Song removed from playlist.");
+  return { status: "Song removed from playlist." };
+}
+
+async function printPlaylist(){
+  console.log("printPlaylist called");
+
+  //load playlist and return it 
+  return loadData("playlist.json");
+
+}
+
+
 module.exports = {
   getTrackInfo,
   getRelatedTracks,
@@ -466,4 +512,7 @@ module.exports = {
   getTagsTopTracks,
   getTagsTopArtists,
   addToPlaylist, 
+  deleteFromPlaylist,
+  printPlaylist,
+
 };
