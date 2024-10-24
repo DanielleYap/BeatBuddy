@@ -1,9 +1,11 @@
 require('dotenv').config();  // Load environment variables
 
-const API_KEY = ''  //Enter your API Key here
 
 const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
+
+const publicDirectory = path.join(__dirname, 'public');
 
 
 
@@ -276,7 +278,7 @@ const formatInformation = (data, dataType) => {
     listeners: 'Unknown',
     playcount: 'Unknown',
     url: 'Unknown',
-    images: [],
+    imageURL: 'No image available'
   };
 
   if (data) {
@@ -305,7 +307,28 @@ const formatInformation = (data, dataType) => {
 
       // Album
       formattedData.album = data.album?.title || data.track?.album?.title || formattedData.album;
+      // Images
+      if (data.album && data.album.image) {
+        formattedData.images = data.album.image.map(img => ({
+          size: img.size,
+          url: img['#text'],
+        }));
+      } else if (data.track && data.track.album && data.track.album.image) {
+        formattedData.images = data.track.album.image.map(img => ({
+          size: img.size,
+          url: img['#text'],
+        }));
+      } else if (data.image) {
+        formattedData.images = data.image.map(img => ({
+          size: img.size,
+          url: img['#text'],
+        }));
+      }
 
+      // Extract the large image URL
+      const largeImage = formattedData.images.find(img => img.size === 'extralarge' || img.size === 'large');
+      formattedData.largeImageURL = largeImage ? largeImage.url : formattedData.largeImageURL;
+    
     } else if (dataType === 'album') {
       // Title
       formattedData.title = data.name || formattedData.title;
@@ -347,7 +370,6 @@ const formatInformation = (data, dataType) => {
       // Artists don't have 'artist', 'album', 'releaseDate', or 'topTags' in this context
     }
   }
-
   return formattedData;
 };
 
@@ -378,87 +400,71 @@ async function addToTracks(formattedTracks){
 //param songTitle: The name of the song to add to the playlist
 //param artist: The artist of the song, default none
 //addToPlaylist: Adds a particular song to the users playlist
-async function addToPlaylist(songTitle, artist = null){
+async function addToPlaylist(songTitle, artist = null) {
   console.log("addToPlaylist called");
-  //laod the current tracklist
-  let trackData = loadData('tracks.json');
-  //loads current playlist
+
+  // Load the current playlist
   let playlistData = loadData('playlist.json');
-  //if already in tracklist add that song to playlist
+
   // Check if the song is already in the playlist
   let songInPlaylist = playlistData.some(
-    (t) => t.title.toLowerCase() === songTitle.toLowerCase() && (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
+    (t) => t.title.toLowerCase() === songTitle.toLowerCase() &&
+    (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
   );
+
   if (songInPlaylist) {
     console.log("Song is already in the playlist.");
     return { status: "Song is already in the playlist." };
   }
 
+  // Fetch detailed track info using getTrackInfo
+  let trackInfo;
+  try {
+    trackInfo = await getTrackInfo(artist, songTitle);
+  } catch (error) {
+    console.error("Error fetching track info:", error);
+    return { status: "Song not found.", error: true };
+  }
 
-  //if not in playlist, call searchTrack, and append to playlist.json
-   // Find the song in tracks.json
-   let songInTracks = trackData.find(
-    (t) => t.title.toLowerCase() === songTitle.toLowerCase() && (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
+  // Add song to tracks.json if not already present
+  let trackData = loadData('tracks.json');
+  let songInTracks = trackData.find(
+    (t) => t.title.toLowerCase() === songTitle.toLowerCase() &&
+    (artist ? t.artist.toLowerCase() === artist.toLowerCase() : true)
   );
 
-  if (songInTracks) {
-    // Add the song to the playlist
-    playlistData.push(songInTracks);
-    //updates the playlist with new song
-    saveData(playlistData, 'playlist.json'); 
-    console.log("Song added to playlist from tracks.json.");
-    return { status: "Song added to playlist from tracks.json." };
-  } else {
-    // Song not in tracks.json, search for it
-    let searchResults = await searchTrack(songTitle);
-    
-    let song;
-    //Used to add artist parameter if passed through to function
-    if (artist) {
-      // Find the song with the specified artist
-      song = searchResults.find((t) => t.artist.toLowerCase() === artist.toLowerCase());
-    }
-
-    if (!song && searchResults.length > 0) {
-      // If artist not specified or not found, take the first result
-      song = searchResults[0];
-    }
-
-    if (song) {
-      // Add song to tracks.json
-      trackData.push(song);
-      saveData(trackData, 'tracks.json');
-      
-      // Add song to playlist.json
-      playlistData.push(song);
-      saveData(playlistData, 'playlist.json');
-      console.log("Song found via searchTrack and added to tracks.json and playlist.json.");
-      return { status: "Song found and added to playlist." };
-    } else {
-      console.log("Song not found via searchTrack.");
-      return { status: "Song not found.", error: true };
-    }
+  if (!songInTracks) {
+    // Add song to tracks.json
+    trackData.push(trackInfo);
+    saveData(trackData, 'tracks.json');
   }
+
+  // Add song to playlist.json
+  playlistData.push(trackInfo);
+  saveData(playlistData, 'playlist.json');
+  console.log("Song added to playlist with detailed info.");
+  return { status: "Song added to playlist with detailed info." };
 }
 
 //saves the data  to a particular json file
 const saveData = (data, filename) => {
-  //Write the data to the file 
-  fs.writeFileSync(filename, JSON.stringify(data, null, 2));
+  const filePath = path.join(publicDirectory, filename);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 };
+
 
 
 //Load up the data from the provided fileename
 const loadData = (filename) => {
-  //Ensure the file exists
-  if (fs.existsSync(filename)) {
-    //Read the data in utf8 formatting
-    const data = fs.readFileSync(filename, 'utf8');
+  const filePath = path.join(publicDirectory, filename);
+  if (fs.existsSync(filePath)) {
+    const data = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(data);
   } else {
     return [];
   }
 };
+
 
 
 
@@ -494,13 +500,7 @@ async function deleteFromPlaylist(songTitle, artist = null){
   return { status: "Song removed from playlist." };
 }
 
-async function printPlaylist(){
-  console.log("printPlaylist called");
 
-  //load playlist and return it 
-  return loadData("playlist.json");
-
-}
 
 
 module.exports = {
@@ -513,6 +513,4 @@ module.exports = {
   getTagsTopArtists,
   addToPlaylist, 
   deleteFromPlaylist,
-  printPlaylist,
-
 };

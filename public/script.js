@@ -44,3 +44,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+
+
+
+// When the user presses the button to print the playist

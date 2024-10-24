@@ -1,0 +1,76 @@
+[
+  {
+    "type": "track",
+    "title": "Hello",
+    "artist": "Adele",
+    "releaseDate": "26 Oct 2015, 10:56",
+    "topTags": [
+      "soul",
+      "pop",
+      "2015",
+      "british",
+      "female vocalists"
+    ],
+    "album": "25",
+    "listeners": "Unknown",
+    "playcount": "Unknown",
+    "url": "Unknown",
+    "imageURL": "No image available",
+    "images": [
+      {
+        "size": "small",
+        "url": "https://lastfm.freetls.fastly.net/i/u/34s/6284ff0b115c46d1b28ae96e6d5b4099.png"
+      },
+      {
+        "size": "medium",
+        "url": "https://lastfm.freetls.fastly.net/i/u/64s/6284ff0b115c46d1b28ae96e6d5b4099.png"
+      },
+      {
+        "size": "large",
+        "url": "https://lastfm.freetls.fastly.net/i/u/174s/6284ff0b115c46d1b28ae96e6d5b4099.png"
+      },
+      {
+        "size": "extralarge",
+        "url": "https://lastfm.freetls.fastly.net/i/u/300x300/6284ff0b115c46d1b28ae96e6d5b4099.png"
+      }
+    ],
+    "largeImageURL": "https://lastfm.freetls.fastly.net/i/u/174s/6284ff0b115c46d1b28ae96e6d5b4099.png"
+  },
+  {
+    "type": "track",
+    "title": "Master of Puppets",
+    "artist": "Metallica",
+    "releaseDate": "26 Jul 2008, 03:01",
+    "topTags": [
+      "thrash metal",
+      "metal",
+      "heavy metal",
+      "metallica",
+      "rock"
+    ],
+    "album": "Master of Puppets",
+    "listeners": "Unknown",
+    "playcount": "Unknown",
+    "url": "Unknown",
+    "imageURL": "No image available",
+    "images": [
+      {
+        "size": "small",
+        "url": "https://lastfm.freetls.fastly.net/i/u/34s/07f492a00c904cc6ccf868010be4d5a6.png"
+      },
+      {
+        "size": "medium",
+        "url": "https://lastfm.freetls.fastly.net/i/u/64s/07f492a00c904cc6ccf868010be4d5a6.png"
+      },
+      {
+        "size": "large",
+        "url": "https://lastfm.freetls.fastly.net/i/u/174s/07f492a00c904cc6ccf868010be4d5a6.png"
+      },
+      {
+        "size": "extralarge",
+        "url": "https://lastfm.freetls.fastly.net/i/u/300x300/07f492a00c904cc6ccf868010be4d5a6.png"
+      }
+    ],
+    "largeImageURL": "https://lastfm.freetls.fastly.net/i/u/174s/07f492a00c904cc6ccf868010be4d5a6.png"
+  }
+]

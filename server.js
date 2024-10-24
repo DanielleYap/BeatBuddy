@@ -1,19 +1,32 @@
-// server.js: hosts the server on localhost to run the application
-
-require('dotenv').config();  // Load environment variables
-
-
-
 // Required packages
 const fs = require('fs');
 const express = require('express'); // Creates server and handles routing
 const cors = require('cors'); // Allows front-end to communicate with back-end
 const bodyParser = require('body-parser'); // Parses incoming request bodies
 const path = require('path'); // Works with file and directory paths
+const mysql = require('mysql'); // MySQL package for database connection
 const app = express(); // Initializes express
+
 app.use(bodyParser.json()); // Ensure body parsing
 app.use(express.json()); // Allows parsing JSON
 app.use(cors()); // Enable CORS
+
+// Sets up MYSQL connection
+const db = mysql.createConnection({
+  host: '127.0.0.1',
+  user: 'root', 
+  password: 'root', 
+  database: 'beatbuddy' // Replace with your database name
+});
+
+// Connect to MySQL and handle connection errors
+db.connect((err) => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+    return;
+  }
+  console.log('Connected to the MySQL database.');
+});
 
 // Sets up JSON file reading/writing
 const saveData = (data, filename) => {
@@ -30,10 +43,10 @@ const initializeDataFiles = () => {
 
 initializeDataFiles(); // Calls initialize function to clear data files
 
-//imports message function to communicate with chatgpt 
+// Imports message function to communicate with chatGPT
 const { messageGPT } = require('./openAIFunctions');
 
-//used to handle openAI on server side
+// Used to handle OpenAI on server side
 app.post('/generate', async (req, res) => {
   const { input, conversationHistory } = req.body;
 
@@ -46,80 +59,40 @@ app.post('/generate', async (req, res) => {
   }
 });
 
+// ----------------------------------- MySQL Routes -----------------------------------------------
 
+// Example route to get the top 5 most frequent songs from the database
+app.get('/top-songs', (req, res) => {
+  const query = `
+    SELECT song, genre, COUNT(*) AS frequency 
+    FROM UserPreferences 
+    GROUP BY song, genre 
+    ORDER BY frequency DESC 
+    LIMIT 5
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching top songs:', err);
+      return res.status(500).json({ error: 'Failed to fetch top songs' });
+    }
+    res.json({ songs: results });
+  });
+});
 
-//-------------------------------Tester Functions -------------------------------------------------------
+// Example route to add a new song preference for a user
+app.post('/add-song', (req, res) => {
+  const { userID, song, genre } = req.body;
+  const query = 'INSERT INTO UserPreferences (userID, song, genre) VALUES (?, ?, ?)';
 
-
-// (async () => {
-//   try {
-//     // Get Track Info
-//     const trackInfo = await getTrackInfo('Adele', 'Hello');
-//     console.log('Track Info:', trackInfo);
-//     trackPlaylist.push(trackInfo);
-//     saveData(trackPlaylist, 'playlist.json'); // Save to playlist.json
-
-//     // Get Related Tracks
-//     const relatedTracks = await getRelatedTracks('Adele', 'Hello');
-//     if (Array.isArray(relatedTracks) && relatedTracks.length > 0) {
-//       console.log('Related Tracks:', relatedTracks);
-//       trackPlaylist.push(...relatedTracks);
-//       saveData(trackPlaylist, 'playlist.json'); // Save to playlist.json
-//     } else {
-//       console.error('No related tracks returned.');
-//     }
-
-//     // Search Track
-//     const searchedTracks = await searchTrack('Hello');
-//     if (Array.isArray(searchedTracks) && searchedTracks.length > 0) {
-//       console.log('Searched Tracks:', searchedTracks);
-//       trackPlaylist.push(...searchedTracks);
-//       saveData(trackPlaylist, 'playlist.json'); // Save to playlist.json
-//     } else {
-//       console.error('No tracks returned from search.');
-//     }
-
-//     // Get Album Info
-//     const albumInfo = await getAlbumInfo('Metallica', 'Master of Puppets');
-//     console.log('Album Info:', albumInfo);
-//     albumPlaylist.push(albumInfo);
-//     saveData(albumPlaylist, 'albums.json');
-
-//     // Search Album
-//     const searchedAlbums = await searchAlbum('Ride The Lightning');
-//     if (Array.isArray(searchedAlbums) && searchedAlbums.length > 0) {
-//       console.log('Searched Albums:', searchedAlbums);
-//       albumPlaylist.push(...searchedAlbums);
-//       saveData(albumPlaylist, 'albums.json');
-//     } else {
-//       console.error('No albums returned from search.');
-//     }
-
-//     // Get Tags Top Tracks
-//     const topPopTracks = await getTagsTopTracks('pop', 5);
-//     if (Array.isArray(topPopTracks) && topPopTracks.length > 0) {
-//       console.log('Top Tracks for Tag "pop":', topPopTracks);
-//       trackPlaylist.push(...topPopTracks);
-//       saveData(trackPlaylist, 'playlist.json'); // Save to playlist.json
-//     } else {
-//       console.error('No top tracks returned for tag "pop".');
-//     }
-
-//     // Get Tags Top Artists
-//     const topPopArtists = await getTagsTopArtists('pop', 5);
-//     if (Array.isArray(topPopArtists) && topPopArtists.length > 0) {
-//       console.log('Top Artists for Tag "pop":', topPopArtists);
-//       artistList.push(...topPopArtists);
-//       saveData(artistList, 'artists.json');
-//     } else {
-//       console.error('No top artists returned for tag "pop".');
-//     }
-
-//   } catch (error) {
-//     console.error('Error in async operations:', error);
-//   }
-// })();
-
+  db.query(query, [userID, song, genre], (err, result) => {
+    if (err) {
+      console.error('Error adding song preference:', err);
+      return res.status(500).json({ error: 'Failed to add song preference' });
+    }
+    res.json({ status: 'success', data: result });
+  });
+});
 
 // ----------------------------------- Server Section -----------------------------------------------
 // Initializes the Express app on port 3000
@@ -131,7 +104,7 @@ app.get('/', (req, res) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+// Provides link to run chatbot
 app.listen(port, () => {
   console.log(`Server is now running on http://localhost:${port}`);
 });

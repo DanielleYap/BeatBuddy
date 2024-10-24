@@ -1,7 +1,10 @@
 // openAIFunctions.js
 
 const OpenAI = require('openai'); // To interact with OpenAI
-require('dotenv').config();
+
+// PLACE openAI api KEY HERE
+
+
 
 // Import necessary functions from MusicFunctions.js
 const {
@@ -17,8 +20,28 @@ const {
   printPlaylist,
 } = require('./MusicFunctions');
 
+//imports necessary functions from spotifyFunctions.js
+const{
+  createPlaylist,
+} = require('./spotifyFunctions');
+
 // Define the functions that OpenAI has access to
 const functionDefinitions = [
+  {
+    name: 'createPlaylist',
+    description: 'Exports / makes a spotify playlist using the playlist data that was created',
+    parameters: {
+      type: 'object',
+      properties: {
+        playlistTitle: {
+          type: 'string',
+          description: 'A creative and unique playlist name based on genres of the songs',
+        },
+      },
+      required: ['playlistTitle'],
+    },
+  },
+
   {
     name: 'searchTrack',
     description: 'Searches for tracks based on a song title.',
@@ -200,11 +223,8 @@ const functionDefinitions = [
   },
 ];
 
-// Initialize the OpenAI client
-const OPEN_AI_KEY = ''
 
 
-//Open AI key here 
 const openai = new OpenAI({
   apiKey: OPEN_AI_KEY,
 });
@@ -268,9 +288,11 @@ const messageGPT = async (userInput, conversationHistory = []) => {
       const functionName = responseMessage.function_call.name;
       const functionArgs = JSON.parse(responseMessage.function_call.arguments);
 
-      // Execute the corresponding function from MusicFunctions.js
+      // Execute the corresponding function from MusicFunctions.js and spotifyFunctions.js
       let functionResult;
       switch (functionName) {
+
+        //Last.Fm related functions
         case 'searchTrack':
           functionResult = await searchTrack(
             functionArgs.songTitle,
@@ -328,6 +350,11 @@ const messageGPT = async (userInput, conversationHistory = []) => {
           break;
         case 'printPlaylist':
           functionResult = await printPlaylist();
+          break;
+
+        //Spotify related functions
+        case 'createPlaylist':
+          functionResult = await createPlaylist(functionArgs.playlistTitle);          
           break;
         default:
           throw new Error(`Function ${functionName} is not implemented.`);
@@ -403,6 +430,7 @@ const messageGPT = async (userInput, conversationHistory = []) => {
   }
 };
 
+//Allows other javascript files to use messageGPT
 module.exports = {
   messageGPT,
 };
