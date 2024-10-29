@@ -4,28 +4,51 @@ const express = require('express'); // Creates server and handles routing
 const cors = require('cors'); // Allows front-end to communicate with back-end
 const bodyParser = require('body-parser'); // Parses incoming request bodies
 const path = require('path'); // Works with file and directory paths
-const mysql = require('mysql'); // MySQL package for database connection
+const mysql = require('mysql2'); // MySQL package for database connection
 const app = express(); // Initializes express
 
 app.use(bodyParser.json()); // Ensure body parsing
 app.use(express.json()); // Allows parsing JSON
 app.use(cors()); // Enable CORS
 
-// Sets up MYSQL connection
-const db = mysql.createConnection({
-  host: '127.0.0.1',
-  user: 'root', 
-  password: 'root', 
-  database: 'beatbuddy' // Replace with your database name
+//SQL Connection setup
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'rootroot',
+  database: 'beatbuddy'
 });
 
-// Connect to MySQL and handle connection errors
-db.connect((err) => {
+//SQL functions 
+
+function updateGenre(genre) {
+  connection.query(
+    'INSERT INTO genres (genre_name, times_in_playlist) VALUES (?, 1) ON DUPLICATE KEY UPDATE times_in_playlist = times_in_playlist + 1',
+    [genre],
+    (err, results) => {
+      if (err) throw err;
+      console.log('Genre updated:', results);
+    }
+  );
+}
+function updateSong(songTitle, artist, genreId) {
+  connection.query(
+    'INSERT INTO songs (song_title, artist, genre_id, times_in_playlist) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE times_in_playlist = times_in_playlist + 1',
+    [songTitle, artist, genreId],
+    (err, results) => {
+      if (err) throw err;
+      console.log('Song updated:', results);
+    }
+  );
+}
+
+
+connection.connect((err) => {
   if (err) {
     console.error('Error connecting to MySQL:', err);
     return;
   }
-  console.log('Connected to the MySQL database.');
+  console.log('Connected to MySQL');
 });
 
 // Sets up JSON file reading/writing
@@ -35,10 +58,10 @@ const saveData = (data, filename) => {
 
 // Clear JSON files upon server startup
 const initializeDataFiles = () => {
-  saveData([], 'playlist.json');
-  saveData([], 'albums.json');
-  saveData([], 'artists.json');
-  saveData([], 'tracks.json');
+  saveData([], 'public/playlist.json');
+  saveData([], 'public/albums.json');
+  saveData([], 'public/artists.json');
+  saveData([], 'public/tracks.json');
 };
 
 initializeDataFiles(); // Calls initialize function to clear data files
@@ -108,3 +131,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.listen(port, () => {
   console.log(`Server is now running on http://localhost:${port}`);
 });
+
+module.exports = {
+  updateGenre, 
+  updateSong,
+};

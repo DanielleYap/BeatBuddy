@@ -1,3 +1,5 @@
+//spotifyFunctions.js: Creates a connection to spotify and allows the program to export a playlist to spotify
+
 /**
  * This example is using the Authorization Code flow.
  *
@@ -5,18 +7,25 @@
  *
  *     npm install express
  *
- * then run with the followinng command. If you don't have a client_id and client_secret yet,
+ * then run with the following command. If you don't have a client_id and client_secret yet,
  * create an application on Create an application here: https://developer.spotify.com/my-applications to get them.
  * Make sure you whitelist the correct redirectUri in line 26.
  *
  *     node access-token-server.js "<Client ID>" "<Client Secret>"
  *
- *  and visit <http://localhost:8888/login> in your Browser.
+ * and visit <http://localhost:8888/login> in your Browser.
  */
+
+//-----------------------------------------Imports -------------------------------------------------------
+
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
 const fs = require('fs');
 
+// Import database functions
+const { updateGenre, updateSong } = require('./dbFunctions');
+
+//-----------------------------------------Spotify Setup -------------------------------------------------------
 
 const scopes = [
   'ugc-image-upload',
@@ -39,22 +48,28 @@ const scopes = [
   'user-follow-read',
   'user-follow-modify'
 ];
-
 const spotifyApi = new SpotifyWebApi({
   redirectUri: 'http://localhost:8888/callback',
-
+  clientId: '',
+  clientSecret: ''
 });
 
 const app = express();
 
+//-----------------------------------------Authorization Endpoints -------------------------------------------------------
+
+/**
+ * Endpoint to initiate Spotify login
+ * Redirects user to Spotify authorization page with specified scopes
+ */
 app.get('/login', (req, res) => {
   res.redirect(spotifyApi.createAuthorizeURL(scopes));
 });
 
-let accessToken;
-let refreshToken;
-let tokenExpiryTime;
-
+/**
+ * Callback endpoint after Spotify authorization
+ * Handles access and refresh token retrieval and sets up auto-refresh of access token
+ */
 app.get('/callback', (req, res) => {
   const error = req.query.error;
   const code = req.query.code;
@@ -69,7 +84,8 @@ app.get('/callback', (req, res) => {
     .then(data => {
       accessToken = data.body['access_token'];
       refreshToken = data.body['refresh_token'];
-      tokenExpiryTime = Date.now() + (data.body['expires_in'] * 1000); // Store expiry time in milliseconds
+      // Store expiry time in milliseconds
+      tokenExpiryTime = Date.now() + (data.body['expires_in'] * 1000); 
 
       spotifyApi.setAccessToken(accessToken);
       spotifyApi.setRefreshToken(refreshToken);
@@ -93,7 +109,8 @@ app.get('/callback', (req, res) => {
             console.error('Error refreshing access token:', err);
           }
         }
-      }, 1000 * 60 * 50); // Check every 50 minutes to refresh the token
+        // Check every 50 minutes to refresh the token
+      }, 1000 * 60 * 50); 
     })
     .catch(error => {
       console.error('Error getting Tokens:', error);
@@ -107,69 +124,93 @@ app.listen(8888, () =>
   )
 );
 
+//-----------------------------------------Helper Functions -------------------------------------------------------
 
+/**
+ * Ensures the access token is valid before making API calls.
+ * Refreshes the access token if it has expired.
+ */
+async function ensureAccessToken() {
+  if (Date.now() > tokenExpiryTime) {
+    try {
+      const refreshedData = await spotifyApi.refreshAccessToken();
+      accessToken = refreshedData.body['access_token'];
+      tokenExpiryTime = Date.now() + (refreshedData.body['expires_in'] * 1000);
+      spotifyApi.setAccessToken(accessToken);
+      console.log('Access token has been refreshed:', accessToken);
+    } catch (err) {
+      console.error('Error refreshing access token:', err);
+    }
+  }
+}
 
-//Function to add tracks from playlist.json into a spotify playlist
-//@param listOftracks: JSON file that holds trackTitle and artistName
-//returns: A link that leads the user to a playlist
+/**
+ * Function to create a Spotify playlist and add tracks from playlist.json
+ * @param {string} playlistTitle - Title of the new Spotify playlist
+ * @returns {Promise<string>} A message indicating success or failure along with the playlist link
+ */
 async function createPlaylist(playlistTitle) {
   console.log("createPlaylist called");
   try {
-    // Read the JSON file containing the tracks
-    const data = fs.readFileSync('playlist.json', 'utf8');
-    // Parse the JSON data into an object
+
+    // Ensure the access token is valid
+    await ensureAccessToken();
+
+    const data = fs.readFileSync('public/playlist.json', 'utf8');
     const listOfTracks = JSON.parse(data);
 
-    // Create a playlist
-    const playlistData = await spotifyApi.createPlaylist(playlistTitle, { 'description': 'Playist Created by BeatBuddy', 'public': true });
-    const playlistID = playlistData.body.id;
-    console.log(playlistTitle + " created successfully!");
+    //attempts to create a public playlist  
+    const playlistData = await spotifyApi.createPlaylist(playlistTitle, {
+      description: 'Playlist Created by BeatBuddy',
+      public: true,
+    });
 
-    // Loop through each track and add it to the playlist
+    const playlistID = playlistData.body.id;
+
+    //Adds each track from Json file to the playlist
     for (const track of listOfTracks) {
 
-
-      // SQL portion: increment song frequency and genres 
-
-
-
-
+      //Searches for track information from json file on spotify
       try {
-        // Search for the track
-        const searchTrackResult = await spotifyApi.searchTracks('track:' + track.title + ' artist:' + track.artist);
-        console.log(track.title + " retrieved from Spotify");
+        const searchTrackResult = await spotifyApi.searchTracks(
+          `track:${track.title} artist:${track.artist}`
+        );
 
-        // If track was found
+        //if the track exists, add it to the playlist
         if (searchTrackResult.body.tracks.items.length > 0) {
           const TRACK_URI = searchTrackResult.body.tracks.items[0].uri;
-
-          // Add track to playlist
           await spotifyApi.addTracksToPlaylist(playlistID, [TRACK_URI]);
-          console.log(track.title + " successfully added to " + playlistTitle + "!");
+
+          // Update genres in the database (only the first 3 tags)
+          for (let i = 0; i < Math.min(3, track.topTags.length); i++) {
+            const tag = track.topTags[i];
+            await updateGenre(tag);
+          }
+
+          // Update song in the database
+          await updateSong(track.title, track.artist, track.topTags[0]);
+
         } else {
-          // If track was not found
-          console.log(track.title + " could not be found.");
+          console.log(`${track.title} could not be found.`);
         }
       } catch (error) {
-        console.error("Error occurred when attempting to add " + track.title + ": ", error);
+        console.error(`Error with track ${track.title}: `, error);
       }
+      console.log(`${track.title} added to the playlist.`);
     }
 
-    // Generate clickable link to user
+    //Returns the playilst link to the user
     const PLAYLIST_URI = `https://open.spotify.com/playlist/${playlistID}`;
-    console.log('Playlist can be found at: ', PLAYLIST_URI);
-    return "Playlist successfully created at " + PLAYLIST_URI;
+    return `Playlist successfully created at ${PLAYLIST_URI}`;
+
   } catch (error) {
-    console.error("Error occurred when creating playlist", error);
-    return "Error creating playlist";
+    console.error('Error occurred when creating playlist', error);
+    return 'Error creating playlist';
   }
 }
-// After obtaining the access token
-spotifyApi.setAccessToken(accessToken);
 
-
-
+//-----------------------------------------Exports -------------------------------------------------------
 
 module.exports = {
   createPlaylist,
-}
+};
