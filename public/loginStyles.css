@@ -7,7 +7,7 @@ body, html {
     justify-content: center;
     align-items: center;
     font-family: Arial, sans-serif;
-    background-color: #000;
+    background-color: #ffffff;
     overflow: hidden;
 }
 
@@ -42,12 +42,45 @@ body, html {
     }
 }
 
+/* Login form */
+.login-page {
+    width: 360px;
+    padding: 8% 0 0;
+    margin: auto;
+}
 .overlay {
-    position: relative; 
-    z-index: 2; 
+    position: relative;
+    z-index: 1;
+    background: #FFFFFF;
+    max-width: 360px;
+    margin: 0 auto 100px;
+    padding: 45px;
     text-align: center;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 20px;
-    border-radius: 8px;
-    color: #fff;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+}
+.overlay input {
+    outline: 0;
+    background: #f2f2f2;
+    width: 100%;
+    border: 0;
+    margin: 0 0 15px;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+.overlay button {
+    text-transform: uppercase;
+    outline: 0;
+    background: #097df1;
+    width: 100%;
+    border: 0;
+    padding: 15px;
+    color: #FFFFFF;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+.overlay button:hover,.overlay button:active,.overlay button:focus {
+    background: #005bb5;
 }

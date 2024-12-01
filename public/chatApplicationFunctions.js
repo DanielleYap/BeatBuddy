@@ -343,3 +343,4 @@ function exportPlaylist() {
 
 // Initial event listener
 document.getElementById('connect-spotify-button').addEventListener('click', connectToSpotify);
+

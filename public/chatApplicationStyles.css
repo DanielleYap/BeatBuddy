@@ -3,7 +3,19 @@
     box-sizing: border-box;
 }
 
-/* Container for the entire application */
+/* Wrapper to ensure everything is centered */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vn;
+}
+
+/* Container for application */
 .container {
     display: flex; /* Enables flexbox */
     flex-direction: row; /* Horizontal alignment */
@@ -12,6 +24,8 @@
     height: 100vh; /* Make it take the full height of the viewport */
     gap: 10px; /* Adds spacing between the containers */
     width: 100%; /* Changed from 100vh to 100% */
+    padding-top: 50px;
+    margin: 0;
 }
 
 /* Main Chat Box */
@@ -30,6 +44,7 @@
     flex: 1; /* Takes up all remaining space */
     overflow-y: auto; /* Allows scrolling for long chat history */
     padding: 10px; /* Optional: Adds spacing */
+
     background-color: #f9f9f9; /* Optional: Background color */
 }
 
@@ -63,12 +78,6 @@ button {
     cursor: pointer;
 }
 
-body {
-    margin: 0; /* Remove default margin */
-  
-    width: 100%; /* Changed from 100vh to 100% */
-}
-
 /* Navigation Bar */
 nav {
     position: fixed; /* Keep the navbar fixed */
@@ -80,6 +89,8 @@ nav {
     background-color: white;
     border-bottom: 1px solid gray;
     z-index: 1000; /* Ensure nav stays above other elements */
+    position: fixed;
+    top: 0;
 }
 
 .nav-container {
@@ -113,6 +124,7 @@ nav {
     background-color: #f4f4f4; /* Optional: Add background color */
     padding: 10px; /* Optional: Add padding */
     overflow-y: auto; /* Enable scrolling if content overflows */
+    margin: 0 auto;
 }
 
 /* Right Sidebar (Chat Playlist) */
@@ -150,6 +162,15 @@ nav {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+
+}
+#connect-spotify-button svg {
+    margin-right: 8px;
+}
+#connect-spotify-button .button-text {
+    text-align: center;
 }
 #connect-spotify-button:hover {
     background-color: #168e40;
@@ -182,7 +203,7 @@ nav {
 /* Upper part of the chat (messages display area) */
 .upper {
     flex: 1;
-    padding-top: 100px;
+    padding-top: 50px;
     padding-bottom: 170px; /* Adjust to make room for input area */
     overflow-y: auto;
 }
